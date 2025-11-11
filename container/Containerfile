@@ -5,13 +5,13 @@ FROM $FROM_IMAGE
 ARG FROM_IMAGE
 
 # Ceph branch name
-ARG CEPH_REF="main"
+ARG CEPH_REF="wip-isawant-rfe-osd-health-warn"
 
 # Ceph SHA1
-ARG CEPH_SHA1
+ARG CEPH_SHA1="0c1b3c0042239947c4a0fa81d20938675c471e3b"
 
 # Ceph git repo (ceph-ci.git or ceph.git)
-ARG CEPH_GIT_REPO
+ARG CEPH_GIT_REPO="https://github.com/indirasawant/ceph.git"
 
 # (optional) Define the baseurl= for the ganesha.repo
 ARG GANESHA_REPO_BASEURL="https://buildlogs.centos.org/centos/\$releasever-stream/storage/\$basearch/nfsganesha-5/"

@@ -1617,3 +1617,24 @@ options:
   level: dev
   default: true
   with_legacy: true
+- name: bluestore_warn_on_projected_db_spillover
+  type: bool
+  level: advanced
+  desc: Emit a health warning if projected BlueFS DB/WAL usage is likely to exceed device size
+  default: true
+  flags:
+  - runtime
+- name: bluestore_projected_db_warn_ratio
+  type: float
+  level: advanced
+  desc: Warn when projected DB/WAL usage exceeds this fraction of DB device size
+  default: 0.85
+  min: 0
+  max: 1
+- name: bluestore_projected_db_min_data_ratio
+  type: float
+  level: advanced
+  desc: Minimum data device utilization fraction before estimating metadata growth
+  default: 0.25
+  min: 0
+  max: 1

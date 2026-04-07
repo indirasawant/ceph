@@ -19431,6 +19431,58 @@ void BlueStore::_log_alerts(osd_alert_list_t& alerts)
       "BLUESTORE_NO_PER_POOL_OMAP",
       no_per_pool_omap_alert);
   }
+  
+  bool warn_on_projected =
+    cct->_conf.get_val<bool>("bluestore_warn_on_projected_db_spillover");
+  double min_data_ratio =
+    cct->_conf.get_val<double>("bluestore_projected_db_min_data_ratio");
+  double warn_ratio =
+    cct->_conf.get_val<double>("bluestore_projected_db_warn_ratio");
+
+  if (spillover_alert.empty() &&
+      warn_on_projected &&
+      bluefs) {
+    store_statfs_t st;
+    int r = statfs(&st, nullptr);
+    if (r < 0) {
+      return;
+    }
+
+    uint64_t data_total = bdev->get_size();
+    uint64_t data_used = st.allocated;
+    uint64_t db_used = bluefs->get_used(BlueFS::BDEV_DB);
+
+    // replace this with the correct accessor for DB device capacity
+    uint64_t db_total = /* TODO */ 0;
+
+    if (data_total == 0 || data_used == 0 || db_used == 0 || db_total == 0) {
+      return;
+    }
+
+    double data_ratio = (double)data_used / (double)data_total;
+    if (data_ratio < min_data_ratio) {
+      return;
+    }
+
+    double metadata_ratio = (double)db_used / (double)data_used;
+    uint64_t projected_db = (uint64_t)(metadata_ratio * data_total);
+    double projected_ratio = (double)projected_db / (double)db_total;
+
+    if (projected_ratio >= warn_ratio) {
+      std::ostringstream ss;
+      ss << "BlueStore DB/WAL device may run out of space based on current "
+         << "metadata growth: projected DB usage "
+         << byte_u_t(projected_db)
+         << " at full data-device utilization, current DB usage "
+         << byte_u_t(db_used)
+         << ", DB device size " << byte_u_t(db_total)
+         << ", current data used " << byte_u_t(data_used)
+         << " of " << byte_u_t(data_total) << ".";
+
+      alerts.emplace("BLUEFS_SPILLOVER_PROJECTED", ss.str());
+    }
+  }
+
   string s0(failed_cmode);
 
   if (!failed_compressors.empty()) {
